@@ -190,8 +190,9 @@ var Option = _react2['default'].createClass({
 		onSelect: _react2['default'].PropTypes.func, // method to handle click on option element
 		onFocus: _react2['default'].PropTypes.func, // method to handle mouseEnter on option element
 		onUnfocus: _react2['default'].PropTypes.func, // method to handle mouseLeave on option element
-		option: _react2['default'].PropTypes.object.isRequired },
-	// object that is base for that option
+		option: _react2['default'].PropTypes.object.isRequired, // object that is base for that option
+		addLabelText: _react2['default'].PropTypes.string },
+	// text to display with value while creating new option
 	blockEvent: function blockEvent(event) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -220,7 +221,6 @@ var Option = _react2['default'].createClass({
 		var option = this.props.option;
 
 		var className = (0, _classnames2['default'])(this.props.className, option.className);
-
 		return option.disabled ? _react2['default'].createElement(
 			'div',
 			{ className: className,
@@ -235,7 +235,7 @@ var Option = _react2['default'].createClass({
 				onMouseEnter: this.handleMouseEnter,
 				onMouseMove: this.handleMouseMove,
 				title: option.title },
-			this.props.children
+			option.create ? this.props.addLabelText.replace('{label}', option.label) : this.props.children
 		);
 	}
 });
@@ -871,10 +871,20 @@ var Select = _react2['default'].createClass({
 	renderMenu: function renderMenu(options, valueArray, focusedOption) {
 		var _this4 = this;
 
-		if (options && options.length) {
+		if (options && options.length || this.props.allowCreate) {
 			var _ret = (function () {
 				var Option = _this4.props.optionComponent;
 				var renderLabel = _this4.props.optionRenderer || _this4.getOptionLabel;
+				var inputValue = _this4.state.inputValue.trim();
+				if (_this4.props.allowCreate && inputValue) {
+					options = options.slice();
+					var newOption = _this4.props.newOptionCreator ? _this4.props.newOptionCreator(inputValue) : {
+						value: inputValue,
+						label: inputValue,
+						create: true
+					};
+					options.unshift(newOption);
+				}
 				return {
 					v: options.map(function (option, i) {
 						var isSelected = valueArray && valueArray.indexOf(option) > -1;
@@ -897,7 +907,8 @@ var Select = _react2['default'].createClass({
 								onFocus: _this4.focusOption,
 								option: option,
 								isSelected: isSelected,
-								ref: optionRef
+								ref: optionRef,
+								addLabelText: _this4.props.addLabelText
 							},
 							renderLabel(option)
 						);
@@ -906,7 +917,7 @@ var Select = _react2['default'].createClass({
 			})();
 
 			if (typeof _ret === 'object') return _ret.v;
-		} else {
+		} else if (this.props.allowCreate) {} else {
 			return _react2['default'].createElement(
 				'div',
 				{ className: 'Select-noresults' },
